@@ -5,8 +5,8 @@ pipeline {
         dockerimagename = "bhavyascaler/react-app:latest"
         // Use a variable to store the Docker image object
         dockerImage = ''
-        // Setting the PATH to ensure Docker can be accessed
-        PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:$PATH"
+        // Correct PATH to ensure Docker can be accessed
+        PATH = "/usr/local/bin:$PATH"  // Add /usr/local/bin to PATH to ensure Docker command is found
     }
 
     stages {
@@ -16,16 +16,16 @@ pipeline {
             }
         }
 
-        stage('Build image') {
+        stage('Build Image') {
             steps {
                 script {
-                    // Build the Docker image from the Dockerfile located at the root of the project
+                    // Build the Docker image using the correct Docker command
                     dockerImage = docker.build(dockerimagename)
                 }
             }
         }
 
-        stage('Pushing Image') {
+        stage('Push Image') {
             environment {
                 // It's assumed 'dockerhub-credentials' is an ID in Jenkins Credential Store
                 registryCredential = 'dockerhub-credentials'
@@ -39,7 +39,6 @@ pipeline {
                 }
             }
         }
-
-        
     }
+
 }
