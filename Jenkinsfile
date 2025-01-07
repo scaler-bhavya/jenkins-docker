@@ -6,7 +6,7 @@ pipeline {
         // Use a variable to store the Docker image object
         dockerImage = ''
         // Correct PATH to ensure Docker can be accessed
-        PATH = "/usr/local/bin:$PATH"  // Add /usr/local/bin to PATH to ensure Docker command is found
+        PATH = "/usr/local/bin/docker"  // Add /usr/local/bin to PATH to ensure Docker command is found
     }
 
     stages {
