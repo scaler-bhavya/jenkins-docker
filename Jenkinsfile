@@ -49,5 +49,32 @@ pipeline {
               }
 
 
+        stage('Build Image') {
+            steps {
+                script {
+                    // Build the Docker image using the full path to Docker
+                    sh "${DOCKER_CMD} build -t ${dockerimagename} ."
+                }
+            }
+        }
+
+        stage('Pushing Image') {
+             environment {
+               registryCredential = 'dockerhub-credentials'
+           }
+             steps{
+                 script {
+                     docker.withRegistry( 'https://registry.hub.docker.com', registryCredential ) {
+                    dockerImage.push("latest")
+          }
+        }
+      }
     }
 }
+}
+
+
+ 
+
+
+
