@@ -2,8 +2,10 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_CMD = "/usr/local/bin/docker"  // Full path to Docker executable (if installed)
-        dockerimagename = "bhavyascaler/react-app:latest"
+             DOCKER_REGISTRY = "docker.io"
+              DOCKER_IMAGE = "bhavyascaler/react-app:latest"
+            DOCKER_CMD = "/usr/local/bin/docker"  // Full path to Docker executable (if installed)
+
     }
 
     stages {
@@ -28,28 +30,24 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/scaler-bhavya/jenkins-docker.git'
             }
         }
+        stage('Build Docker Image') {
+                  steps {
+                      script {
+                          docker.build("${DOCKER_IMAGE}:${env.BUILD_ID}")
+                      }
+                  }
+              }
 
-        stage('Build Image') {
-            steps {
-                script {
-                    // Build the Docker image using the full path to Docker
-                    sh "${DOCKER_CMD} build -t ${dockerimagename} ."
-                }
-            }
-        }
+              stage('Push Docker Image') {
+                  steps {
+                      script {
+                          docker.withRegistry('', 'dockerhub-credentials') {
+                              docker.image("${DOCKER_IMAGE}:${env.BUILD_ID}").push()
+                          }
+                      }
+                  }
+              }
 
-        stage('Push Image (with login)') { // More descriptive stage name
-            environment {
-                registryCredential = 'dockerhub-credentials' // ID of your Docker Hub credentials
-            }
-            steps {
-                script {
-                    // Log in and push the image to Docker Hub
-                    docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
-                        docker.build(dockerimagename).push() // Use docker.build(...) to get the image object
-                    }
-                }
-            }
-        }
+
     }
 }
