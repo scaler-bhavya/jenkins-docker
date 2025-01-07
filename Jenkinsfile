@@ -4,25 +4,10 @@ pipeline {
     environment {
         DOCKER_CMD = "/usr/local/bin/docker"  // Full path to Docker executable (if installed)
         dockerimagename = "bhavyascaler/react-app:latest"
+        registryCredential = 'dockerhub-credentials'  // Define the registry credential ID
     }
 
     stages {
-        stage('Install Docker (if needed)') { // More descriptive stage name
-            when { // Only run if Docker not found
-                expression {
-                    !fileExists("/usr/local/bin/docker")
-                }
-            }
-            steps {
-                script {
-                    echo "Docker not found, installing..."
-
-                    // Check Docker installation
-                    sh '/usr/local/bin/docker --version'
-                }
-            }
-        }
-
         stage('Checkout Source') {
             steps {
                 git branch: 'main', url: 'https://github.com/scaler-bhavya/jenkins-docker.git'
@@ -37,21 +22,18 @@ pipeline {
                 }
             }
         }
- 
-     stage('Pushing Image') {
-        environment {
-               registryCredential = 'dockerhub-credentials'
-           }
-            steps{
+
+        stage('Push Image') {
+            steps {
                 script {
-                    docker.withRegistry( 'https://registry.hub.docker.com', registryCredential ) {
-                    dockerImage.push("latest")
-          }
+                    // Push the Docker image to a custom registry (Docker Hub in this case)
+                    docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
+                        // Build and push the image
+                        def dockerImage = docker.image(dockerimagename)
+                        dockerImage.push("latest")  // Push the image to Docker Hub
+                    }
+                }
+            }
         }
-      }
     }
-        }
 }
-
-
-
