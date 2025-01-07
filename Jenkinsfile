@@ -1,51 +1,60 @@
 pipeline {
+    agent any
 
-  environment {
-    dockerimagename = "bhavyascaler/react-app:latest"
-    dockerImage = ""
-  }
-
-  agent any
-
-  stages {
-
-    stage('Checkout Source') {
-      steps {
-        // Specify branch to avoid ambiguity and ensure the correct source is checked out
-        git branch: 'main', url: 'https://github.com/scaler-bhavya/jenkins-docker.git'
-      }
+    environment {
+        dockerimagename = "bhavyascaler/react-app:latest"
+        // Use a variable to store the Docker image object
+        dockerImage = ''
+        // Setting the PATH to ensure Docker can be accessed
+        PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:$PATH"
     }
 
-    stage('Build image') {
-      steps {
-        script {
-          dockerImage = docker.build dockerimagename
+    stages {
+        stage('Checkout Source') {
+            steps {
+                git branch: 'main', url: 'https://github.com/scaler-bhavya/jenkins-docker.git'
+            }
         }
-      }
-    }
 
-    stage('Pushing Image') {
-      environment {
-        registryCredential = 'dockerhub-credentials'
-      }
-      steps {
-        script {
-          docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
-            dockerImage.push("latest")
-          }
+        stage('Build image') {
+            steps {
+                script {
+                    // Build the Docker image from the Dockerfile located at the root of the project
+                    dockerImage = docker.build(dockerimagename)
+                }
+            }
         }
-      }
-    }
 
-    stage('Deploying React.js container to Kubernetes') {
-      steps {
-        script {
-          // Ensure paths to configurations are correct or relative to the workspace
-          kubernetesDeploy(configs: ['./deployment.yaml', './service.yaml'])
+        stage('Pushing Image') {
+            environment {
+                // It's assumed 'dockerhub-credentials' is an ID in Jenkins Credential Store
+                registryCredential = 'dockerhub-credentials'
+            }
+            steps {
+                script {
+                    // Log in and push the image to Docker Hub
+                    docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
+                        dockerImage.push("latest")
+                    }
+                }
+            }
         }
-      }
+
+        stage('Deploying React.js container to Kubernetes') {
+            steps {
+                script {
+                    // Deploy to Kubernetes using the configurations in 'deployment.yaml' and 'service.yaml'
+                    kubernetesDeploy(configs: ['deployment.yaml', 'service.yaml'])
+                }
+            }
+        }
     }
 
-  }
-
+    post {
+        always {
+            // Cleanup action to ensure Docker logs out from the registry
+            echo 'Cleaning up post build...'
+            sh 'docker logout'
+        }
+    }
 }
