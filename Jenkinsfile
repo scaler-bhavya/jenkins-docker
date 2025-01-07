@@ -4,39 +4,21 @@ pipeline {
     environment {
         DOCKER_CMD = "/usr/local/bin/docker"  // Full path to Docker executable (if installed)
         dockerimagename = "bhavyascaler/react-app:latest"
-        dockerImage = ''
     }
 
     stages {
-        stage('Install Docker') {
+        stage('Install Docker (if needed)') { // More descriptive stage name
+            when { // Only run if Docker not found
+                expression {
+                    !fileExists("/usr/local/bin/docker")
+                }
+            }
             steps {
                 script {
-                    // Install Docker if it's not installed
-                    if (!fileExists("/usr/local/bin/docker")) {
-                        echo "Docker not found, installing..."
-                        sh '''
-                        # Update the package manager and install dependencies
-                        sudo apt-get update
-                        sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+                    echo "Docker not found, installing..."
 
-                        # Add Docker's official GPG key and repository
-                        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-                        sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-
-                        # Install Docker
-                        sudo apt-get update
-                        sudo apt-get install -y docker-ce
-
-                        # Ensure Docker is running
-                        sudo systemctl start docker
-                        sudo systemctl enable docker
-                        '''
-
-                        // Check Docker installation
-                        sh '/usr/local/bin/docker --version'
-                    } else {
-                        echo "Docker is already installed."
-                    }
+                    // Check Docker installation
+                    sh '/usr/local/bin/docker --version'
                 }
             }
         }
@@ -51,25 +33,23 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image using the full path to Docker
-                    sh '${DOCKER_CMD} build -t ${dockerimagename} .'
-                    dockerImage = docker.build(dockerimagename)
+                    sh "${DOCKER_CMD} build -t ${dockerimagename} ."
                 }
             }
         }
 
-        stage('Push Image') {
+        stage('Push Image (with login)') { // More descriptive stage name
             environment {
-                registryCredential = 'dockerhub-credentials'
+                registryCredential = 'dockerhub-credentials' // ID of your Docker Hub credentials
             }
             steps {
                 script {
                     // Log in and push the image to Docker Hub
                     docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
-                        dockerImage.push("latest")
+                        docker.build(dockerimagename).push() // Use docker.build(...) to get the image object
                     }
                 }
             }
         }
     }
-
 }
