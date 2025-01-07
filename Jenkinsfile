@@ -11,12 +11,13 @@ pipeline {
 
     stage('Checkout Source') {
       steps {
-        git 'https://github.com/scaler-bhavya/jenkins-docker.git'
+        // Specify branch to avoid ambiguity and ensure the correct source is checked out
+        git branch: 'main', url: 'https://github.com/scaler-bhavya/jenkins-docker.git'
       }
     }
 
     stage('Build image') {
-      steps{
+      steps {
         script {
           dockerImage = docker.build dockerimagename
         }
@@ -25,11 +26,11 @@ pipeline {
 
     stage('Pushing Image') {
       environment {
-               registryCredential = 'dockerhub-credentials'
-           }
-      steps{
+        registryCredential = 'dockerhub-credentials'
+      }
+      steps {
         script {
-          docker.withRegistry( 'https://registry.hub.docker.com', registryCredential ) {
+          docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
             dockerImage.push("latest")
           }
         }
@@ -39,7 +40,8 @@ pipeline {
     stage('Deploying React.js container to Kubernetes') {
       steps {
         script {
-          kubernetesDeploy(configs: "deployment.yaml", "service.yaml")
+          // Ensure paths to configurations are correct or relative to the workspace
+          kubernetesDeploy(configs: ['./deployment.yaml', './service.yaml'])
         }
       }
     }
