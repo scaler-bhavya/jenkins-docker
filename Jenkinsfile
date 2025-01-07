@@ -40,13 +40,6 @@ pipeline {
             }
         }
 
-        stage('Deploying React.js container to Kubernetes') {
-            steps {
-                script {
-                    // Deploy to Kubernetes using the configurations in 'deployment.yaml' and 'service.yaml'
-                    kubernetesDeploy(configs: ['deployment.yaml', 'service.yaml'])
-                }
-            }
-        }
+        
     }
 }
