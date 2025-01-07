@@ -49,12 +49,4 @@ pipeline {
             }
         }
     }
-
-    post {
-        always {
-            // Cleanup action to ensure Docker logs out from the registry
-            echo 'Cleaning up post build...'
-            sh 'docker logout'
-        }
-    }
 }
