@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_CMD = "/usr/local/bin/docker"  // Full path to Docker executable (if installed)
+        DOCKER_CMD = "/usr/bin/docker"  // Full path to Docker executable (if installed)
         dockerimagename = "bhavyascaler/react-app:latest"
         registryCredential = 'dockerhub-credentials'  // Define the registry credential ID
     }
