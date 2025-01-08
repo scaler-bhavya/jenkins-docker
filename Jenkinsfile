@@ -2,9 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_CMD = "/usr/bin/docker"  // Full path to Docker executable (if installed)
-        dockerimagename = "bhavyascaler/react-app:latest"
-        registryCredential = 'dockerhub-credentials'  // Define the registry credential ID
+      DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
     }
 
     stages {
@@ -18,22 +16,19 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image using the full path to Docker
-                    sh "${DOCKER_CMD} build -t ${dockerimagename} ."
+                    sh 'docker build -t bhavyascaler/react-app:latest .'
                 }
             }
         }
-
-        stage('Push Image') {
+        stage('Login') {
             steps {
-                script {
-                    // Push the Docker image to a custom registry (Docker Hub in this case)
-                    docker.withRegistry('https://registry.hub.docker.com', registryCredential) {
-                        // Build and push the image
-                        def dockerImage = docker.image(dockerimagename)
-                        dockerImage.push("latest")  // Push the image to Docker Hub
-                    }
-                }
-            }
-        }
+             sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+          }
+      }
+       stage('Push') {
+      steps {
+        sh 'docker push bhavyascaler/react-app:latest'
+      }
+    }
     }
 }
