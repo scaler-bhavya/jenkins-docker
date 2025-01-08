@@ -30,13 +30,12 @@ pipeline {
         sh 'docker push bhavyascaler/react-app:latest'
       }
     }
-    stage('Deploy to Kubernetes') {
-            steps {
-                kubernetes(
-                    configs: 'deployment.yaml',
-                    kubeconfigId: 'k8s-credentials'
-                )
-            }
-        }
+    node {
+  stage('Apply Kubernetes files') {
+    withKubeConfig([credentialsId: 'k8s-credentials', serverUrl: 'https://127.0.0.1:44301']) {
+      sh 'kubectl apply -f deployment.yaml'
+    }
+  }
+}
     }
 }
