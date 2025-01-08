@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-      DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
     }
 
     stages {
@@ -15,26 +15,31 @@ pipeline {
         stage('Build Image') {
             steps {
                 script {
-                    // Build the Docker image using the full path to Docker
                     sh 'docker build -t bhavyascaler/react-app:latest .'
                 }
             }
         }
+
         stage('Login') {
             steps {
-             sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
-          }
-      }
-       stage('Push') {
-      steps {
-        sh 'docker push bhavyascaler/react-app:latest'
-      }
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+
+        stage('Push') {
+            steps {
+                sh 'docker push bhavyascaler/react-app:latest'
+            }
+        }
+
+        stage('Apply Kubernetes files') {
+            steps {
+                script {
+                    withKubeConfig([credentialsId: 'k8s-credentials', serverUrl: 'https://127.0.0.1:44301']) {
+                        sh 'kubectl apply -f deployment.yaml'
+                    }
+                }
+            }
+        }
     }
-   
-  stage('Apply Kubernetes files') {
-    withKubeConfig([credentialsId: 'k8s-credentials', serverUrl: 'https://127.0.0.1:44301']) {
-      sh 'kubectl apply -f deployment.yaml'
-    }
-  }
 }
-    }
